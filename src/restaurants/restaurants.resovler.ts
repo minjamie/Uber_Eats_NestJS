@@ -1,23 +1,43 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { create } from 'domain';
 import { CreateRestaurantDto } from 'src/dtos/create-restaurant.dto';
-import { Restaurants } from './entities/restaurants.entity';
+import { UpdateRestaurantDto } from 'src/dtos/update-restaurant.dto';
+import { Restaurant } from './entities/restaurant.entity';
+import { RestaurantService } from './restaurants.service';
 
-// 레스토랑 entity를 인자로 작성해준다.
-// 이렇게 해주면 Resolver가 Restaurants의 Resolver 임을 명시(옵션)해줄 수 있다.
-@Resolver((of) => Restaurants)
-//2.  Resolver 데코레이터 생성
+@Resolver((of) => Restaurant)
 export class RestaurantsResolver {
-  @Query((returns) => [Restaurants])
-  // 그래프 큐엘에 타입지정하는 방식
-  myRestaurant(@Args('veganOnly') veganOnly: boolean): Restaurants[] {
-    // nestjs에 타입지정하는 방식
-    // 인자를 받기 위해서 @Args 요청해야한다.
-    return [];
+  //1. Injectable 한 service를 RestaurantResolver 넣어보자
+  constructor(private readonly restaurantService: RestaurantService) {}
+  @Query((returns) => [Restaurant])
+  myRestaurant(): Promise<Restaurant[]> {
+    // 이 RestaurantsResolver는 서비스를 사용할 수 있음
+    return this.restaurantService.getAll();
   }
-
   @Mutation((returns) => Boolean)
-  createRestaurant(@Args() createRestaurantDto: CreateRestaurantDto): boolean {
+  async createRestaurant(
+    @Args('input') createRestaurantDto: CreateRestaurantDto,
+  ): Promise<boolean> {
     console.log(createRestaurantDto);
-    return true;
+    try {
+      await this.restaurantService.createRestaurant(createRestaurantDto);
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+  @Mutation((returns) => Boolean)
+  // resolver mutation에 어떤 레스토랑을 수정할 지 알려주기 위해 id를 보내야함
+  async updateRestaurant(
+    // 옵션 1 -
+    @Args('data') updateRestaurantDto: UpdateRestaurantDto,
+  ): Promise<boolean> {
+    try {
+      await this.restaurantService.updateRestaurant(updateRestaurantDto);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
