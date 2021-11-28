@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RestaurantsModule } from './restaurants/restaurants.module';
+import { Restaurant } from './restaurants/entities/restaurant.entity';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
     //1.  typeorm 모듈 앱 모듈에 설치
     TypeOrmModule.forRoot({
       //connection Option, 1, 코드에 직접쓰거나 2. ormconfig.json파일에 쓰는법
+      entities: [Restaurant],
       type: 'postgres',
       host: process.env.DB_HOST,
       // 숫자가 들어간 string("252")을 num으로 바꾸기 위해서+를 앞에 붙여주면됨
@@ -42,7 +44,8 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      synchronize: true,
+      synchronize: process.env.NODE_ENV !== 'prod',
+      // prod 아니면 synchronize가 true
       // 데이터 베이스에서 모듈의 현재상태로 마이크레이션
       logging: true,
       // 로깅을 찍어준다.
