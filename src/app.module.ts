@@ -9,10 +9,11 @@ import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
-import { CommonModule } from './common/common.module';
-import { User } from './users/entities/user.entitiy';
+import { User } from './users/entities/user.entity';
+import { Verification } from './users/entities/verification.entity';
 import { JwtModule } from './jwt/jwt.module';
 import { JwtMiddleWare } from './jwt/jwt.middleware';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -28,6 +29,9 @@ import { JwtMiddleWare } from './jwt/jwt.middleware';
         DB_PASSWORD: Joi.string().required(),
         DB_NAME: Joi.string().required(),
         PRIVATE_KET: Joi.string().required(),
+        MAILGUN_API_KEY: Joi.string().required(),
+        MAILGUN_DOMAIN_NAME: Joi.string().required(),
+        MAILGUN_FROM_EMAIL: Joi.string().required(),
       }),
     }),
     GraphQLModule.forRoot({
@@ -50,7 +54,7 @@ import { JwtMiddleWare } from './jwt/jwt.middleware';
       database: process.env.DB_NAME,
       synchronize: process.env.NODE_ENV !== 'prod',
       logging: false,
-      entities: [User],
+      entities: [Verification, User],
     }),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KET,
@@ -58,7 +62,13 @@ import { JwtMiddleWare } from './jwt/jwt.middleware';
     // static module은 이 JwtModule처럼 어떠한 설정도 적용되어 있지 않는다.
     // dynamic module은 GraphQLModule처럼 설정이 존재
     // 동적인 모듈은 결과적으로 정적인 모듈이 된다.
+    MailModule.forRoot({
+      apiKey: process.env.MAILGUN_API_KEY,
+      fromEmail: process.env.MAILGUN_DOMAIN_NAME,
+      domain: process.env.MAILGUN_FROM_EMAIL,
+    }),
     UsersModule,
+    MailModule,
   ],
   controllers: [],
   providers: [],

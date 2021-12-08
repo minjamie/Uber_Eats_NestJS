@@ -29,7 +29,9 @@ export class User extends CoreEntity {
   @IsEmail()
   email: string;
 
-  @Column()
+  // 첫 번쩨 파트 . select false를 하면 user에 더이상 psw가 포함이 안됨
+  //  select false는 this.psw가 정의 x 따라서 psw를 사용하려면 psw select하고 싶다고 전달해야함
+  @Column({ select: false })
   @Field((type) => String)
   @IsString()
   password: string;
@@ -39,11 +41,18 @@ export class User extends CoreEntity {
   @IsEnum(UserRole)
   role: UserRole;
 
+  @Column({ default: false })
+  @Field((type) => Boolean)
+  verified: boolean;
+
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
     try {
-      this.password = await bcrypt.hash(this.password, 10);
+      // 2번째 파트. psw가 있을 경우에만 해쉬화 진행
+      if (this.password) {
+        this.password = await bcrypt.hash(this.password, 10);
+      }
       // DB에 저장하기 전 여기 instance의 password를 받아서 해쉬화함
     } catch (e) {
       console.log(e);
