@@ -7,8 +7,8 @@ import { User } from './entities/user.entity';
 import { JwtService } from 'src/jwt/jwt.service';
 import { ConfigService } from '@nestjs/config';
 import { EditProfileInput } from './dtos/edit-profile.dto';
-import { emit } from 'process';
 import { Verification } from './entities/verification.entity';
+import { UserProfileOutput } from './dtos/user-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -89,24 +89,45 @@ export class UsersService {
       };
     }
   }
-  async findById(id: number): Promise<User> {
-    return this.users.findOne({ id });
+  async findById(id: number): Promise<UserProfileOutput> {
+    try {
+      const user = await this.users.findOne({ id });
+
+      return {
+        ok: true,
+        user,
+      };
+    } catch (error) {
+      return { ok: false, error: 'user not found' };
+    }
   }
+
   async editProfile(userId: number, { email, password }: EditProfileInput) {
-    const user = await this.users.findOne(userId);
-    if (emit) {
-      user.email = email;
-      user.verified = false;
-      await this.verifications.save(
-        this.verifications.create({
-          user,
-        }),
-      );
+    try {
+      const user = await this.users.findOne(userId);
+      if (email) {
+        user.email = email;
+        user.verified = false;
+        await this.verifications.delete({ user: { id: user.id } });
+        await this.verifications.save(
+          this.verifications.create({
+            user,
+          }),
+        );
+      }
+      if (password) {
+        user.password = password;
+      }
+      this.users.save(user);
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'could not update profile',
+      };
     }
-    if (password) {
-      user.password = password;
-    }
-    this.users.save(user);
   }
 
   async verifyEmail(code: string): Promise<boolean> {
@@ -123,7 +144,6 @@ export class UsersService {
       if (verification) {
         // 유저 인증 => 인증되면 인증서를 일고 => 인증 => 지워주기
         verification.user.verified = true;
-        console.log(verification.user);
         //save를 한 번 더 하면 hash를 한 번 더 진행하여 비밀번호가 바뀌는 문제발생
         await this.users.save(verification.user);
         await this.verifications.delete(verification.id);

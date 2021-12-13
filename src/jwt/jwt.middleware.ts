@@ -17,13 +17,15 @@ export class JwtMiddleWare implements NestMiddleware {
     //headers에서 유저를 찾아 req에 보내는 미들웨어와 dependency injection을 이용
     if ('x-jwt' in req.headers) {
       const token = req.headers['x-jwt'];
-      const decoded = this.jwtService.verify(token.toString());
-      if (typeof decoded === 'object' && decoded.hasOwnProperty('id')) {
-        try {
-          const user = await this.usersService.findById(decoded['id']);
-          req['user'] = user;
-        } catch (e) {}
-      }
+      try {
+        const decoded = this.jwtService.verify(token.toString());
+        if (typeof decoded === 'object' && decoded.hasOwnProperty('id')) {
+          const { user, ok } = await this.usersService.findById(decoded['id']);
+          if (ok) {
+            req['user'] = user;
+          }
+        }
+      } catch (error) {}
     }
     next();
   }
@@ -31,6 +33,5 @@ export class JwtMiddleWare implements NestMiddleware {
 
 // 함수로  만드는 방법
 // export function JwtMiddleWare(req: Request, res: Response, next: NextFunction) {
-//   console.log(req.headers);
 //   next();
 // }
