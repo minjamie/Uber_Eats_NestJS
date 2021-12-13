@@ -2,20 +2,17 @@
 
 The Backend of Minber Eats
 
-## User Entity
+## Restaurant Model
 
--id
--createAt
--updateAt
+- See Categories
+- See Restaurants by Category (pagination)
+- See Restaurants (pagination)
+- See Restaurant
+- Search Restaurant
 
--email
--password
--role(client|owner|delivery)
+- Edit Restaurant
+- Delete Restaurant
 
-## User CRUD
-
--Create Account
--Log In
--See Profile
--Edit Profile
--Verify Email
+-Create Dish
+-Edit Dish
+-Delete Dish
