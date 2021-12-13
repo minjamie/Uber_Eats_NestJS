@@ -1,24 +1,25 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import * as Joi from 'joi';
-// 자바스크립트 패키지는 타입스크립트로 만들어있지 않기때문에 import하는 방식이 다름
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RestaurantsModule } from './restaurants/restaurants.module';
-import { Restaurant } from './restaurants/entities/restaurant.entity';
+import { UsersModule } from './users/users.module';
+import { CommonModule } from './common/common.module';
+import { User } from './users/entities/user.entitiy';
+import { JwtModule } from './jwt/jwt.module';
+import { JwtMiddleWare } from './jwt/jwt.middleware';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      // 어플리케이션 어디서나 config 모듈 접근 가능하도록
       isGlobal: true,
-      // 변수를 환경에 따라 다르게 접근 하도록 설정
-      // npm 환경에 따라 다르게 실행되도록 pagkage.json script수정
       envFilePath: process.env.NODE_ENV === 'dev' ? '.env.dev' : '.env.test',
-      // 서버에 배포할 때 환경 변수 파일 사용하지 않도록
-      // prod 환경일 때 ConfigModule은 환경변수 파일을 무시함
       ignoreEnvFile: process.env.NODE_ENV === 'prod',
-      // import한 Joi object활용하여 환경 변수마저 유효성 검사를 할 수 있다.
       validationSchema: Joi.object({
         NODE_ENV: Joi.string().valid('dev', 'prod').required(),
         DB_HOST: Joi.string().required(),
@@ -26,33 +27,53 @@ import { Restaurant } from './restaurants/entities/restaurant.entity';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_NAME: Joi.string().required(),
-
-        // Joi는 string이 되어야하며 valid안에 환경 변수들을 적어준다.
+        PRIVATE_KET: Joi.string().required(),
       }),
     }),
     GraphQLModule.forRoot({
       autoSchemaFile: true,
+      // req user를 graphql resolver의 context를 통해 공유
+      context: ({ req }) => ({ user: req['user'] }),
+      // headers에서 user를 req에 보내는 middleware까지 구현
+      // apollo server, graphql 은 context를 가진다.
+      // req context 는 각 req에서 사용 가능하며
+      // context가 함수로 정의되면 매 req마다 호출
+      // req property를 포함한 obj를 express로 부터 받는다
+      // 즉 context에 property를 넣으면 이 프로퍼티는 resolver안에서 확인 가능하다.
     }),
-    //1.  typeorm 모듈 앱 모듈에 설치
     TypeOrmModule.forRoot({
-      //connection Option, 1, 코드에 직접쓰거나 2. ormconfig.json파일에 쓰는법
-      entities: [Restaurant],
       type: 'postgres',
       host: process.env.DB_HOST,
-      // 숫자가 들어간 string("252")을 num으로 바꾸기 위해서+를 앞에 붙여주면됨
       port: +process.env.DB_PORT,
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       synchronize: process.env.NODE_ENV !== 'prod',
-      // prod 아니면 synchronize가 true
-      // 데이터 베이스에서 모듈의 현재상태로 마이크레이션
-      logging: true,
-      // 로깅을 찍어준다.
+      logging: false,
+      entities: [User],
     }),
-    RestaurantsModule,
+    JwtModule.forRoot({
+      privateKey: process.env.PRIVATE_KET,
+    }),
+    // static module은 이 JwtModule처럼 어떠한 설정도 적용되어 있지 않는다.
+    // dynamic module은 GraphQLModule처럼 설정이 존재
+    // 동적인 모듈은 결과적으로 정적인 모듈이 된다.
+    UsersModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  // 모든 app에서 미들웨어를 사용하도록
+  // NextModule 상속
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(JwtMiddleWare).forRoutes({
+      //forRoutes()를 통해 /graphql 경로에 method가 POST 경우에만 apply 적용한다는 것
+      path: '/graphql',
+      method: RequestMethod.POST,
+      // path: '*',method:RequestMethod.ALL - 모든 경로 모든 메소드
+      // consumer.apply(JwtMiddleWare).exclude// 특정 경로 제외하고 적용
+    });
+    // 어떤 라우터에서 동작하는지 설정할 수 있음
+  }
+}
