@@ -4,15 +4,15 @@ The Backend of Minber Eats
 
 ## Restaurant Model
 
-- See Categories
-- See Restaurants by Category (pagination)
-- See Restaurants (pagination)
-- See Restaurant
-- Search Restaurant
+# Dish
 
-- Edit Restaurant
-- Delete Restaurant
+- Create Dish
+- Edit Dish
+- Delete Dish
 
--Create Dish
--Edit Dish
--Delete Dish
+# Orders & delivery
+
+- Orders CRUD
+- Orders Subscription(Owner, Customer, Delivery)
+
+# Payments(with paddle, Cron job)

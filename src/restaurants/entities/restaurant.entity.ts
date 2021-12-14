@@ -1,17 +1,11 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
-import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
-import { CoreOutput } from 'src/common/dtos/output.dtd';
+import { IsString, Length } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
+import { Order } from 'src/orders/entities/order.entity';
 import { User } from 'src/users/entities/user.entity';
-import {
-  Column,
-  Entity,
-  ManyToOne,
-  PrimaryColumn,
-  PrimaryGeneratedColumn,
-  RelationId,
-} from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
 import { Category } from './category.entity';
+import { Dish } from './dish.entity';
 @InputType('RestaurantInputType', { isAbstract: true })
 @ObjectType()
 @Entity()
@@ -46,7 +40,18 @@ export class Restaurant extends CoreEntity {
     onDelete: 'CASCADE',
   })
   owner: User;
+
+  @Field((type) => Order, { nullable: true })
+  @OneToMany((type) => Order, (order) => order.restaurant)
+  orders: Order[];
+
   // 어떤 relationId를 로드할 건지 리턴값으로 넘겨준다
   @RelationId((restaurant: Restaurant) => restaurant.owner)
   ownerId: number;
+
+  @Field((type) => [Dish])
+  // 1:N 관계가 Dish임을 첫번째 인자로 넘겨 알려주고
+  // 2번째는 함수로 dish의 restaurant을 dish.restaurant에서 찾을 수 있음을 의미
+  @OneToMany((type) => Dish, (dish) => dish.restaurant)
+  menu: Dish[];
 }
