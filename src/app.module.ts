@@ -22,6 +22,7 @@ import { Dish } from './restaurants/entities/dish.entity';
 import { OrdersModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -43,9 +44,25 @@ import { OrderItem } from './orders/entities/order-item';
       }),
     }),
     GraphQLModule.forRoot({
+      // subscription에 연결하는 순간 http route거치지 않고 웹 소켓 라우트를 거친다. 웹소켓을 요청이없다.
+      // subscriptions: {
+      //   'subscriptions-transport-ws': {
+      //     onConnect: (connectionParams: any) => ({
+      //       token: connectionParams['x-jwt'],
+      //     }),
+      //   },
+      // },
       autoSchemaFile: true,
-      // req user를 graphql resolver의 context를 통해 공유
-      context: ({ req }) => ({ user: req['user'] }),
+      installSubscriptionHandlers: true,
+
+      //서버가 웹 소켓 기능을 가지게 된다. 웹 소켓은 요청 대신 connection(웹소케잇이 클라와 서버 연결을 설정할때 발생)을 가진다.
+      context: ({ req, connection }) => {
+        const TOKEN_KEY = 'x-jwt';
+        console.log(connection);
+        return {
+          token: req ? req.headers[TOKEN_KEY] : connection.context[TOKEN_KEY],
+        };
+      },
       // headers에서 user를 req에 보내는 middleware까지 구현
       // apollo server, graphql 은 context를 가진다.
       // req context 는 각 req에서 사용 가능하며
@@ -88,21 +105,32 @@ import { OrderItem } from './orders/entities/order-item';
     RestaurantsModule,
     AuthModule,
     OrdersModule,
+    CommonModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule implements NestModule {
-  // 모든 app에서 미들웨어를 사용하도록
-  // NextModule 상속
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(JwtMiddleWare).forRoutes({
-      //forRoutes()를 통해 /graphql 경로에 method가 POST 경우에만 apply 적용한다는 것
-      path: '/graphql',
-      method: RequestMethod.POST,
-      // path: '*',method:RequestMethod.ALL - 모든 경로 모든 메소드
-      // consumer.apply(JwtMiddleWare).exclude// 특정 경로 제외하고 적용
-    });
-    // 어떤 라우터에서 동작하는지 설정할 수 있음
-  }
-}
+// 웹소켓의 인증하는 방법은 jwt미들웨어를 사용하지 않는다.
+// guard는 http든 웹 소켓이든 모든 그래프큐엘 리졸버에 대해 호출된다.
+export class AppModule {}
+
+// GqlExecutionContext에 context제공하는건 이전에 http통해 웹사이트로 요청이 왔을 때 가장 먼저 찾는건 jwt미들웨어였다
+//  jwt미들웨어였다 헤더에서 토큰을 가져와서 유저를 찾고 찾은 유저를 req에 넣는다.
+// 그리고 graphql context fuc이 req내부에서 유저를 가져오고 context.user에 넣어준다.
+// 따라서     GraphQLModule.forRoot 안에 있는 context가 guard에 context를 제공해준다.
+
+//   jwt미들웨어 설정
+// export class AppModule implements NestModule {
+//   모든 app에서 미들웨어를 사용하도록
+//   NextModule 상속
+//   configure(consumer: MiddlewareConsumer) {
+//     consumer.apply(JwtMiddleWare).forRoutes({
+//       forRoutes()를 통해 /graphql 경로에 method가 POST 경우에만 apply 적용한다는 것
+//       path: '/graphql',
+//       method: RequestMethod.POST,
+//       path: '*',method:RequestMethod.ALL - 모든 경로 모든 메소드
+//       consumer.apply(JwtMiddleWare).exclude// 특정 경로 제외하고 적용
+//     });
+//     어떤 라우터에서 동작하는지 설정할 수 있음
+//   }
+// }
