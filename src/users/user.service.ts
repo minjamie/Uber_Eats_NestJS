@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { EditProfileInput } from './dtos/edit-profile.dto';
 import { Verification } from './entities/verification.entity';
 import { UserProfileOutput } from './dtos/user-profile.dto';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class UsersService {

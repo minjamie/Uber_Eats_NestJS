@@ -12,7 +12,6 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { Verification } from './users/entities/verification.entity';
 import { JwtModule } from './jwt/jwt.module';
-import { JwtMiddleWare } from './jwt/jwt.middleware';
 import { MailModule } from './mail/mail.module';
 import { Restaurant } from './restaurants/entities/restaurant.entity';
 import { Category } from './restaurants/entities/category.entity';
@@ -25,6 +24,7 @@ import { OrderItem } from './orders/entities/order-item';
 import { CommonModule } from './common/common.module';
 import { PaymentsModule } from './payments/payments.module';
 import { Payment } from './payments/entites/payment.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -91,6 +91,7 @@ import { Payment } from './payments/entites/payment.entity';
         Payment,
       ],
     }),
+    ScheduleModule.forRoot(),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KET,
     }),
