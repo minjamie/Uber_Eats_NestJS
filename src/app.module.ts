@@ -23,6 +23,8 @@ import { OrdersModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item';
 import { CommonModule } from './common/common.module';
+import { PaymentsModule } from './payments/payments.module';
+import { Payment } from './payments/entites/payment.entity';
 
 @Module({
   imports: [
@@ -58,7 +60,6 @@ import { CommonModule } from './common/common.module';
       //서버가 웹 소켓 기능을 가지게 된다. 웹 소켓은 요청 대신 connection(웹소케잇이 클라와 서버 연결을 설정할때 발생)을 가진다.
       context: ({ req, connection }) => {
         const TOKEN_KEY = 'x-jwt';
-        console.log(connection);
         return {
           token: req ? req.headers[TOKEN_KEY] : connection.context[TOKEN_KEY],
         };
@@ -87,6 +88,7 @@ import { CommonModule } from './common/common.module';
         Dish,
         Order,
         OrderItem,
+        Payment,
       ],
     }),
     JwtModule.forRoot({
@@ -106,6 +108,7 @@ import { CommonModule } from './common/common.module';
     AuthModule,
     OrdersModule,
     CommonModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],

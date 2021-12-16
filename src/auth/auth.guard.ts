@@ -32,7 +32,7 @@ export class AuthGuard implements CanActivate {
     // 그게 아니라면 컨텍스트를 얻는다.
     const gqlContext = GqlExecutionContext.create(context).getContext();
     const token = gqlContext.token;
-    console.log(token);
+    token;
     // 컨텍스트에 토큰이 있으면 디코드해서 유저를 찾고
     if (token) {
       const decoded = this.jwtService.verify(token.toString());

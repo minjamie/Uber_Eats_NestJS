@@ -11,6 +11,7 @@ import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { Payment } from 'src/payments/entites/payment.entity';
 
 export enum UserRole {
   Client = 'Client',
@@ -55,6 +56,11 @@ export class User extends CoreEntity {
   @Field((type) => [Order])
   @OneToMany((type) => Order, (order) => order.customer)
   orders: Order[];
+
+  @Field((type) => [Payment])
+  @OneToMany((type) => Payment, (payment) => payment.user, { eager: true })
+  payments: Payment[];
+  //  { eager: true를  추가하면 me를 통해 payment를 가져올 수 있다. 단 페이지네이션은 불가능하다
 
   @Field((type) => [Order])
   @OneToMany((type) => Order, (order) => order.driver)
